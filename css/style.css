@@ -1,19 +1,127 @@
-/* Remote Warfare — 基础样式 */
+/* Remote Warfare 全局样式：绿色磷光屏 + 横屏 + UI 层规范 */
+
+:root {
+  --green-hi:   #33ff33;
+  --green-hi2:  #00ff00;
+  --green-mid:  #00cc00;
+  --green-mid2: #00aa00;
+  --green-low:  #003300;
+  --green-dim:  #007700;
+  --bg:   #0a0f0a;
+  --bg2:  #001100;
+  --scan-opacity: 0.5;
+}
+
 * { margin: 0; padding: 0; box-sizing: border-box; }
-html, body { height: 100%; }
-body {
-  display: flex; align-items: center; justify-content: center;
-  min-height: 100vh; padding: 24px;
-  font-family: 'Segoe UI', 'PingFang SC', Roboto, system-ui, sans-serif;
-  background: #0b0f14 radial-gradient(circle at 50% 30%, #14202b 0%, #0b0f14 70%);
-  color: #d7e3ee;
+
+html, body {
+  width: 100%; height: 100%;
+  background: var(--bg);
+  overflow: hidden;
+  color: var(--green-hi);
+  font-family: "Courier New", ui-monospace, Consolas, monospace;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none; user-select: none;
+  touch-action: manipulation;
 }
-.stage { text-align: center; }
-.title {
-  font-size: clamp(2rem, 8vw, 3.6rem); font-weight: 800; letter-spacing: .12em;
-  background: linear-gradient(90deg, #6ee7ff, #8bffb0);
-  -webkit-background-clip: text; background-clip: text; color: transparent;
+
+/* 画布全屏 */
+#stage {
+  position: absolute; inset: 0;
+  display: block;
+  width: 100%; height: 100%;
+  cursor: crosshair;
 }
-.sub { margin-top: .6rem; opacity: .75; letter-spacing: .3em; font-size: .95rem; }
-.status { margin-top: 2rem; opacity: .85; }
-.hint { margin-top: .6rem; font-size: .8rem; opacity: .4; letter-spacing: .08em; }
+
+/* 磷光屏扫描线覆盖层 */
+.scanline {
+  position: absolute; inset: 0;
+  pointer-events: none;
+  z-index: 40;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0,0,0,0) 0px,
+    rgba(0,0,0,0) 2px,
+    rgba(0,40,0,0.18) 3px,
+    rgba(0,0,0,0) 4px
+  );
+  opacity: var(--scan-opacity);
+}
+
+/* 磷光屏辉光 */
+#stage, #ui-root {
+  text-shadow: 0 0 4px rgba(51,255,51,0.35);
+}
+
+/* 横屏提示 */
+.rotate-tip {
+  position: absolute; inset: 0;
+  z-index: 100;
+  display: none;
+  align-items: center; justify-content: center;
+  background: var(--bg);
+  color: var(--green-hi);
+  font-size: 18px; letter-spacing: 3px;
+}
+body.portrait .rotate-tip { display: flex; }
+body.portrait #ui-root { display: none; }
+
+/* UI 层容器 */
+#ui-root {
+  position: absolute; inset: 0;
+  z-index: 50;
+  pointer-events: none;
+}
+#ui-root > * { pointer-events: auto; }
+
+/* 按钮规范（交互层） */
+.btn {
+  display: inline-block;
+  padding: 8px 18px;
+  border: 1px solid var(--green-mid);
+  background: var(--green-low);
+  color: var(--green-hi);
+  letter-spacing: 2px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+}
+.btn:hover, .btn:focus { background: var(--green-mid); color: #000; outline: none; }
+.btn:active { background: var(--green-hi); color: #000; }
+
+/* 居中弹窗（显示层） */
+.modal {
+  position: absolute; left: 50%; top: 50%;
+  transform: translate(-50%,-50%);
+  min-width: 280px; max-width: 80vw;
+  border: 1px solid var(--green-mid);
+  background: rgba(0,17,0,0.92);
+  padding: 18px 20px;
+  box-shadow: 0 0 18px rgba(0,255,0,0.25);
+}
+.modal .modal-title {
+  color: var(--green-hi2);
+  font-size: 15px; letter-spacing: 3px;
+  border-bottom: 1px solid var(--green-dim);
+  padding-bottom: 8px; margin-bottom: 10px;
+}
+.modal .modal-body { font-size: 13px; color: var(--green-hi); line-height: 1.6; }
+.modal .modal-foot { margin-top: 12px; text-align: right; }
+
+/* 全屏覆盖层（大段阅读） */
+.screen {
+  position: absolute; inset: 0;
+  background: var(--bg);
+  padding: 24px;
+  overflow-y: auto;
+}
+
+/* HUD 顶部栏 */
+.hud {
+  position: absolute; top: 0; left: 0; right: 0;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 12px;
+  font-size: 13px; letter-spacing: 1px;
+  border-bottom: 1px solid var(--green-dim);
+  background: rgba(0,17,0,0.7);
+}
