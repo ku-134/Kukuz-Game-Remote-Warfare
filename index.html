@@ -2,17 +2,30 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Remote Warfare · 远程战争</title>
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <main class="stage">
-    <h1 class="title">Remote Warfare</h1>
-    <p class="sub">远程战争 · 小游戏项目</p>
-    <p class="status">🚧 项目骨架已就位，玩法开发中……</p>
-    <p class="hint">纯静态 · 零构建 · HTML / CSS / JS</p>
-  </main>
+  <!-- 竖屏提示 -->
+  <div id="rotate-tip" class="rotate-tip">请横屏体验</div>
+
+  <!-- 磷光屏扫描线覆盖层 -->
+  <div id="scanline" class="scanline"></div>
+
+  <!-- 游戏画布 -->
+  <canvas id="stage"></canvas>
+
+  <!-- UI 层（DOM） -->
+  <div id="ui-root"></div>
+
+  <script src="js/core/utils.js"></script>
+  <script src="js/core/settings.js"></script>
+  <script src="js/core/input.js"></script>
+  <script src="js/systems/terrain.js"></script>
+  <script src="js/systems/unit.js"></script>
+  <script src="js/ui/ui.js"></script>
+  <script src="js/core/engine.js"></script>
   <script src="js/main.js"></script>
 </body>
 </html>
