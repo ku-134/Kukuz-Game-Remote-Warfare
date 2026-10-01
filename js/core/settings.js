@@ -5,9 +5,10 @@ RW.settings = (function () {
   var DEFAULTS = {
     intensity: 0.8,   /* 磷光强度 */
     scanline: 0.5,    /* 扫描线 */
-    glow: 0.5,        /* 辉光 */
-    curvature: 0.0,   /* 弯曲/畸变（预留） */
-    brightness: 0.5   /* 亮度（预留） */
+    glow: 0.6,        /* 辉光 */
+    trail: 0.40,      /* 磷光余晖 */
+    curvature: 0.6,   /* 曲面畸变 */
+    brightness: 0.55  /* 亮度 */
   };
   var KEY = 'rw_display_settings';
   var cur = load();
