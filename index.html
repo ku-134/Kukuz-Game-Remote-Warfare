@@ -10,10 +10,7 @@
   <!-- 竖屏提示 -->
   <div id="rotate-tip" class="rotate-tip">请横屏体验</div>
 
-  <!-- 磷光屏扫描线覆盖层 -->
-  <div id="scanline" class="scanline"></div>
-
-  <!-- 游戏画布 -->
+  <!-- 游戏画布（含磷光屏后处理） -->
   <canvas id="stage"></canvas>
 
   <!-- UI 层（DOM） -->
@@ -21,10 +18,14 @@
 
   <script src="js/core/utils.js"></script>
   <script src="js/core/settings.js"></script>
+  <script src="js/core/fx.js"></script>
   <script src="js/core/input.js"></script>
+  <script src="js/core/load.js"></script>
   <script src="js/systems/terrain.js"></script>
   <script src="js/systems/unit.js"></script>
   <script src="js/ui/ui.js"></script>
+  <script src="js/screens/boot.js"></script>
+  <script src="js/screens/menu.js"></script>
   <script src="js/core/engine.js"></script>
   <script src="js/main.js"></script>
 </body>
