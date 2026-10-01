@@ -1,6 +1,6 @@
 /* screens/menu.js —— 开始界面（主菜单 + 显示设置）
    交互层：菜单项、设置滑条、固定返回按钮。显示层：标题、版本、提示。
-   完整实现见本地源码；此处保证核心结构可运行。 */
+   完整实现见本地源码。 */
 RW.menu = (function () {
   'use strict';
 
@@ -14,6 +14,7 @@ RW.menu = (function () {
     { key: 'intensity', label: '磷光强度' },
     { key: 'scanline', label: '扫描线' },
     { key: 'glow', label: '辉光' },
+    { key: 'trail', label: '磷光余晖' },
     { key: 'brightness', label: '亮度' }
   ];
 
@@ -23,19 +24,13 @@ RW.menu = (function () {
 
   function layout() {
     var s = RW.fx.size();
-    var u = s.dpr;
-    var pad = 26 * u;
-    return {
-      u: u, w: s.W, h: s.H, x: pad, y: pad,
-      innerW: s.W - pad * 2, innerH: s.H - pad * 2,
-      footY: s.H - pad - 26 * u
-    };
+    var u = s.dpr, pad = 26 * u;
+    return { u: u, w: s.W, h: s.H, x: pad, y: pad, innerW: s.W - pad * 2, innerH: s.H - pad * 2, footY: s.H - pad - 26 * u };
   }
 
   function menuRects() {
     var L = layout();
-    var w = Math.min(L.innerW * 0.62, 460 * L.u);
-    var hRow = 38 * L.u;
+    var w = Math.min(L.innerW * 0.62, 460 * L.u), hRow = 38 * L.u;
     var x = (L.w - w) / 2, y = L.h * 0.46;
     var out = [];
     for (var i = 0; i < ITEMS.length; i++) out.push({ x: x, y: y + i * (hRow + 8 * L.u), w: w, h: hRow, index: i });
@@ -44,11 +39,10 @@ RW.menu = (function () {
 
   function settingRects() {
     var L = layout();
-    var w = Math.min(L.innerW * 0.72, 520 * L.u);
-    var hRow = 44 * L.u;
-    var x = (L.w - w) / 2, y = L.h * 0.30;
+    var w = Math.min(L.innerW * 0.76, 560 * L.u), hRow = 36 * L.u;
+    var x = (L.w - w) / 2, y = L.h * 0.26;
     var out = [];
-    for (var i = 0; i < SETTING_DEFS.length; i++) out.push({ x: x, y: y + i * (hRow + 12 * L.u), w: w, h: hRow, index: i });
+    for (var i = 0; i < SETTING_DEFS.length; i++) out.push({ x: x, y: y + i * (hRow + 8 * L.u), w: w, h: hRow, index: i });
     return out;
   }
 
@@ -114,6 +108,14 @@ RW.menu = (function () {
     c.fillStyle = '#010401'; c.fillRect(0, 0, L.w, L.h);
     RW.fx.frame(c, L.x, L.y, L.innerW, L.innerH, { color: '#005500' });
     RW.fx.sweep(c, t, L.w, L.h);
+    /* 四角角标，与游玩界面统一语言 */
+    var L2 = Math.min(16 * L.u, L.innerW * 0.05);
+    c.strokeStyle = '#00aa00'; c.lineWidth = 2;
+    var cs = [[L.x, L.y, 1, 1], [L.x + L.innerW, L.y, -1, 1], [L.x, L.y + L.innerH, 1, -1], [L.x + L.innerW, L.y + L.innerH, -1, -1]];
+    for (var i = 0; i < cs.length; i++) {
+      var q = cs[i];
+      c.beginPath(); c.moveTo(q[0], q[1] + q[3] * L2); c.lineTo(q[0], q[1]); c.lineTo(q[0] + q[2] * L2, q[1]); c.stroke();
+    }
     if (mode === 'main') drawMain(c, L); else drawSettings(c, L);
   }
 
@@ -142,8 +144,8 @@ RW.menu = (function () {
 
   function drawSettings(c, L) {
     var u = L.u, cx = L.w / 2;
-    RW.fx.phosphorText(c, 'D I S P L A Y   S E T T I N G S', cx, L.h * 0.18, 20 * u, { align: 'center', bold: true });
-    RW.fx.phosphorText(c, '显示设置 · 即时生效，不影响运行', cx, L.h * 0.18 + 20 * u, 12 * u, { align: 'center', color: '#00aa00' });
+    RW.fx.phosphorText(c, 'D I S P L A Y   S E T T I N G S', cx, L.h * 0.14, 20 * u, { align: 'center', bold: true });
+    RW.fx.phosphorText(c, '显示设置 · 即时生效，不影响运行', cx, L.h * 0.14 + 20 * u, 12 * u, { align: 'center', color: '#00aa00' });
 
     var rs = settingRects();
     for (var i = 0; i < rs.length; i++) {
@@ -151,8 +153,7 @@ RW.menu = (function () {
       var val = RW.settings.get(SETTING_DEFS[i].key);
       var col = selected ? '#33ff33' : '#008800';
       RW.fx.phosphorText(c, (selected ? '> ' : '  ') + SETTING_DEFS[i].label, r.x, r.y + 14 * u, 14 * u, { color: col });
-
-      var bx = r.x + 130 * u, bw = r.w - 200 * u, by = r.y + 6 * u, bh = 16 * u;
+      var bx = r.x + 130 * u, bw = r.w - 200 * u, by = r.y + 6 * u, bh = 14 * u;
       RW.fx.frame(c, bx, by, bw, bh, { color: selected ? '#00cc00' : '#005500' });
       c.fillStyle = selected ? '#33ff33' : '#00aa00';
       c.fillRect(bx + 1, by + 1, (bw - 2) * val, bh - 2);
