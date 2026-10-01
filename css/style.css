@@ -1,4 +1,5 @@
-/* Remote Warfare 全局样式：绿色磷光屏 + 横屏 + UI 层规范 */
+/* Remote Warfare 全局样式
+   画面全部由 Canvas + FX 引擎绘制；此处仅负责容器、横屏与 DOM UI 层。 */
 
 :root {
   --green-hi:   #33ff33;
@@ -9,7 +10,6 @@
   --green-dim:  #007700;
   --bg:   #0a0f0a;
   --bg2:  #001100;
-  --scan-opacity: 0.5;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -25,32 +25,12 @@ html, body {
   touch-action: manipulation;
 }
 
-/* 画布全屏 */
+/* 画布全屏（后处理输出目标） */
 #stage {
   position: absolute; inset: 0;
   display: block;
   width: 100%; height: 100%;
   cursor: crosshair;
-}
-
-/* 磷光屏扫描线覆盖层 */
-.scanline {
-  position: absolute; inset: 0;
-  pointer-events: none;
-  z-index: 40;
-  background: repeating-linear-gradient(
-    0deg,
-    rgba(0,0,0,0) 0px,
-    rgba(0,0,0,0) 2px,
-    rgba(0,40,0,0.18) 3px,
-    rgba(0,0,0,0) 4px
-  );
-  opacity: var(--scan-opacity);
-}
-
-/* 磷光屏辉光 */
-#stage, #ui-root {
-  text-shadow: 0 0 4px rgba(51,255,51,0.35);
 }
 
 /* 横屏提示 */
@@ -64,9 +44,9 @@ html, body {
   font-size: 18px; letter-spacing: 3px;
 }
 body.portrait .rotate-tip { display: flex; }
-body.portrait #ui-root { display: none; }
+body.portrait #stage { display: none; }
 
-/* UI 层容器 */
+/* DOM UI 层（弹窗等显示层） */
 #ui-root {
   position: absolute; inset: 0;
   z-index: 50;
@@ -74,17 +54,29 @@ body.portrait #ui-root { display: none; }
 }
 #ui-root > * { pointer-events: auto; }
 
-/* 按钮规范（交互层） */
+/* 悬浮 HUD（游玩界面顶部信息条） */
+.hud {
+  position: absolute; top: 0; left: 0; right: 0;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 6px 12px;
+  font-size: 12px; letter-spacing: 1px;
+  color: var(--green-mid2);
+  background: linear-gradient(180deg, rgba(0,20,0,0.85), rgba(0,20,0,0));
+  text-shadow: 0 0 4px rgba(51,255,51,0.35);
+}
+body.portrait .hud { display: none; }
+
+/* 按钮（交互层） */
 .btn {
   display: inline-block;
-  padding: 8px 18px;
+  padding: 7px 16px;
   border: 1px solid var(--green-mid);
   background: var(--green-low);
   color: var(--green-hi);
   letter-spacing: 2px;
   cursor: pointer;
   font-family: inherit;
-  font-size: 14px;
+  font-size: 13px;
 }
 .btn:hover, .btn:focus { background: var(--green-mid); color: #000; outline: none; }
 .btn:active { background: var(--green-hi); color: #000; }
@@ -93,35 +85,17 @@ body.portrait #ui-root { display: none; }
 .modal {
   position: absolute; left: 50%; top: 50%;
   transform: translate(-50%,-50%);
-  min-width: 280px; max-width: 80vw;
+  min-width: 300px; max-width: 76vw;
   border: 1px solid var(--green-mid);
-  background: rgba(0,17,0,0.92);
+  background: rgba(0,17,0,0.94);
   padding: 18px 20px;
-  box-shadow: 0 0 18px rgba(0,255,0,0.25);
+  box-shadow: 0 0 20px rgba(0,255,0,0.22);
 }
 .modal .modal-title {
   color: var(--green-hi2);
-  font-size: 15px; letter-spacing: 3px;
+  font-size: 14px; letter-spacing: 3px;
   border-bottom: 1px solid var(--green-dim);
   padding-bottom: 8px; margin-bottom: 10px;
 }
-.modal .modal-body { font-size: 13px; color: var(--green-hi); line-height: 1.6; }
-.modal .modal-foot { margin-top: 12px; text-align: right; }
-
-/* 全屏覆盖层（大段阅读） */
-.screen {
-  position: absolute; inset: 0;
-  background: var(--bg);
-  padding: 24px;
-  overflow-y: auto;
-}
-
-/* HUD 顶部栏 */
-.hud {
-  position: absolute; top: 0; left: 0; right: 0;
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 8px 12px;
-  font-size: 13px; letter-spacing: 1px;
-  border-bottom: 1px solid var(--green-dim);
-  background: rgba(0,17,0,0.7);
-}
+.modal .modal-body { font-size: 13px; color: var(--green-hi); line-height: 1.7; }
+.modal .modal-foot { margin-top: 14px; text-align: right; }
