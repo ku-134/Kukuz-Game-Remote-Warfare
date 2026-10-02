@@ -1,5 +1,6 @@
 /* Remote Warfare 全局样式
-   画面全部由 Canvas + FX 引擎绘制；此处仅负责容器、横屏与 DOM UI 层。 */
+   画面全部由 Canvas + FX 引擎绘制；此处负责容器、横屏告警页与 DOM UI 层。
+   完整实现见本地源码。 */
 
 :root {
   --green-hi:   #33ff33;
@@ -9,7 +10,6 @@
   --green-low:  #003300;
   --green-dim:  #007700;
   --bg:   #0a0f0a;
-  --bg2:  #001100;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -25,7 +25,6 @@ html, body {
   touch-action: manipulation;
 }
 
-/* 画布全屏（后处理输出目标） */
 #stage {
   position: absolute; inset: 0;
   display: block;
@@ -33,40 +32,111 @@ html, body {
   cursor: crosshair;
 }
 
-/* 横屏提示 */
+/* ============ 横屏告警页 ============ */
 .rotate-tip {
   position: absolute; inset: 0;
   z-index: 100;
   display: none;
+  flex-direction: column;
   align-items: center; justify-content: center;
-  background: var(--bg);
+  gap: 18px;
+  background:
+    repeating-linear-gradient(0deg,
+      rgba(0,0,0,0) 0px, rgba(0,0,0,0) 2px,
+      rgba(0,40,0,0.28) 3px, rgba(0,0,0,0) 4px),
+    radial-gradient(ellipse at center, #001400 0%, #000600 75%);
   color: var(--green-hi);
-  font-size: 18px; letter-spacing: 3px;
+  text-shadow: 0 0 8px rgba(51,255,51,0.5);
+  overflow: hidden;
 }
 body.portrait .rotate-tip { display: flex; }
 body.portrait #stage { display: none; }
 
-/* DOM UI 层（弹窗等显示层） */
-#ui-root {
-  position: absolute; inset: 0;
-  z-index: 50;
-  pointer-events: none;
+.rt-head {
+  position: absolute; top: 16px; left: 20px; right: 20px;
+  display: flex; justify-content: space-between;
+  font-size: 11px; letter-spacing: 2px;
+  color: var(--green-mid2);
+  opacity: .8;
 }
+
+.rt-phone {
+  width: 64px; height: 112px;
+  border: 2px solid var(--green-mid);
+  border-radius: 8px;
+  position: relative;
+  animation: rt-rotate 2.6s cubic-bezier(.6,.05,.35,1) infinite;
+  box-shadow: 0 0 14px rgba(0,204,0,0.35) inset;
+}
+.rt-phone::before {
+  content: "";
+  position: absolute; left: 50%; top: 7px;
+  width: 20px; height: 3px;
+  background: var(--green-mid);
+  transform: translateX(-50%);
+  border-radius: 2px;
+}
+.rt-phone::after {
+  content: "";
+  position: absolute; inset: 6px 6px 14px 6px;
+  background: repeating-linear-gradient(0deg,
+    rgba(0,204,0,0.20) 0px, rgba(0,204,0,0.20) 1px,
+    rgba(0,0,0,0) 1px, rgba(0,0,0,0) 4px);
+}
+
+@keyframes rt-rotate {
+  0%   { transform: rotate(0deg); }
+  30%  { transform: rotate(0deg); }
+  55%  { transform: rotate(90deg); }
+  80%  { transform: rotate(90deg); }
+  100% { transform: rotate(90deg); }
+}
+
+.rt-title {
+  font-size: 26px; letter-spacing: 8px; font-weight: bold;
+  color: var(--green-hi);
+  animation: rt-flicker 4.2s linear infinite;
+}
+.rt-sub { font-size: 13px; letter-spacing: 5px; color: var(--green-mid2); }
+.rt-cn  { font-size: 12px; letter-spacing: 3px; color: var(--green-dim); }
+
+@keyframes rt-flicker {
+  0%, 92%, 100% { opacity: 1; }
+  93% { opacity: .35; }
+  94% { opacity: 1; }
+  96% { opacity: .5; }
+  97% { opacity: 1; }
+}
+
+.rt-log {
+  position: absolute; left: 20px; right: 20px; bottom: 26px;
+  font-size: 10.5px; letter-spacing: 1px;
+  color: var(--green-dim);
+  white-space: nowrap; overflow: hidden;
+  border-top: 1px solid rgba(0,119,0,0.4);
+  padding-top: 10px;
+  text-align: center;
+}
+.rt-log span { display: inline-block; animation: rt-marquee 14s linear infinite; }
+@keyframes rt-marquee {
+  0%   { transform: translateX(60%); }
+  100% { transform: translateX(-100%); }
+}
+
+.rt-corner {
+  position: absolute; width: 26px; height: 26px;
+  border-color: var(--green-mid);
+  border-style: solid; border-width: 0;
+}
+.rt-corner.tl { top: 14px; left: 14px; border-top-width: 2px; border-left-width: 2px; }
+.rt-corner.tr { top: 14px; right: 14px; border-top-width: 2px; border-right-width: 2px; }
+.rt-corner.bl { bottom: 14px; left: 14px; border-bottom-width: 2px; border-left-width: 2px; }
+.rt-corner.br { bottom: 14px; right: 14px; border-bottom-width: 2px; border-right-width: 2px; }
+
+/* ============ DOM UI 层 ============ */
+#ui-root { position: absolute; inset: 0; z-index: 50; pointer-events: none; }
 #ui-root > * { pointer-events: auto; }
 
-/* 悬浮 HUD（游玩界面顶部信息条） */
-.hud {
-  position: absolute; top: 0; left: 0; right: 0;
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 6px 12px;
-  font-size: 12px; letter-spacing: 1px;
-  color: var(--green-mid2);
-  background: linear-gradient(180deg, rgba(0,20,0,0.85), rgba(0,20,0,0));
-  text-shadow: 0 0 4px rgba(51,255,51,0.35);
-}
-body.portrait .hud { display: none; }
-
-/* 按钮（交互层） */
 .btn {
   display: inline-block;
   padding: 7px 16px;
@@ -81,7 +151,6 @@ body.portrait .hud { display: none; }
 .btn:hover, .btn:focus { background: var(--green-mid); color: #000; outline: none; }
 .btn:active { background: var(--green-hi); color: #000; }
 
-/* 居中弹窗（显示层） */
 .modal {
   position: absolute; left: 50%; top: 50%;
   transform: translate(-50%,-50%);
