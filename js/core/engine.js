@@ -1,7 +1,7 @@
 /* core/engine.js —— 状态机 / 主循环 / 渲染调度
-   游玩界面按 core/layout.js 的三区布局绘制：
-   地图显示 / 地图操作 / 单位下令区 / 详情展示。
-   含统一 panel() 面板原语与信号干扰覆盖层。完整实现见本地源码。 */
+   状态：boot -> menu -> play；切屏带过渡（RW.trans）。
+   游玩界面：TACTICAL MAP / MAP TOOLS / ORDERS / DETAIL 四区 + FOOTER。
+   完整实现见本地源码。 */
 RW.engine = (function () {
   'use strict';
 
@@ -50,7 +50,14 @@ RW.engine = (function () {
   function goto(name) {
     screen = name;
     if (name === 'menu') { RW.menu.reset(); RW.ui.clear(); }
-    if (name === 'play') { RW.ui.clear(); RW.fx.burst(0.8); }
+    if (name === 'play') { RW.ui.clear(); }
+    RW.ui.clearFlashes();
+  }
+
+  function requestScreen(name) {
+    if (name === screen) return;
+    if (RW.trans.isActive()) return;
+    RW.trans.go(function () { goto(name); }, 0.42);
   }
 
   function showModal(title, lines) {
@@ -60,9 +67,7 @@ RW.engine = (function () {
       body.appendChild(document.createTextNode(l));
       body.appendChild(document.createElement('br'));
     });
-    RW.ui.show(RW.ui.modal(title, body, [
-      { label: '关闭', onClick: function () { RW.ui.clear(); } }
-    ]));
+    RW.ui.show(RW.ui.modal(title, body, [{ label: '关闭', onClick: function () { RW.ui.clear(); } }]));
   }
 
   function handleInput(name, p) {
@@ -74,10 +79,10 @@ RW.engine = (function () {
     }
     if (screen === 'play') {
       if (name === 'key') {
-        if (p.key === 'escape' || p.key === 'q') goto('menu');
+        if (p.key === 'escape' || p.key === 'q') requestScreen('menu');
         return;
       }
-      if (jammed) return;   /* 信号干扰期间锁定操作 */
+      if (jammed) return;
       var L = RW.layout.get();
       if (name === 'move') { handleHover(p, L); return; }
       if (name === 'down') { handleTap(p, L); return; }
@@ -85,7 +90,9 @@ RW.engine = (function () {
   }
 
   function inRect(p, r) { return p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h; }
-  function tileAt(p, L) { return { x: Math.floor((p.x - L.tile.originX) / L.tile.size), y: Math.floor((p.y - L.tile.originY) / L.tile.size) }; }
+  function tileAt(p, L) {
+    return { x: Math.floor((p.x - L.tile.originX) / L.tile.size), y: Math.floor((p.y - L.tile.originY) / L.tile.size) };
+  }
 
   function handleHover(p, L) {
     if (inRect(p, L.mapInner)) {
@@ -100,11 +107,14 @@ RW.engine = (function () {
       var t = tileAt(p, L), picked = null;
       for (var i = 0; i < units.length; i++) if (units[i].x === t.x && units[i].y === t.y) picked = units[i];
       units.forEach(function (o) { o.selected = false; });
-      if (picked) { picked.selected = true; focusedUnit = picked; RW.fx.burst(0.4); }
-      else { focusedUnit = null; }
+      if (picked) {
+        picked.selected = true;
+        focusedUnit = picked;
+        RW.ui.flash(L.tile.originX + picked.x * L.tile.size, L.tile.originY + picked.y * L.tile.size, L.tile.size, L.tile.size);
+      } else { focusedUnit = null; }
       return;
     }
-    if (inRect(p, L.tools) || inRect(p, L.orders)) { RW.fx.burst(0.25); return; }
+    if (inRect(p, L.tools) || inRect(p, L.orders)) { return; }
   }
 
   function start() { last = performance.now(); requestAnimationFrame(loop); }
@@ -114,10 +124,12 @@ RW.engine = (function () {
     last = now;
     var t = now / 1000;
     RW.fx.update(dt);
+    RW.trans.update(dt);
+    RW.ui.updateFlashes(dt);
     if (screen === 'boot') {
       RW.boot.update(dt);
       clearContent(); RW.boot.draw(cx);
-      if (RW.boot.isDone()) goto('menu');
+      if (RW.boot.isDone()) requestScreen('menu');
     } else if (screen === 'menu') {
       RW.menu.update(dt);
       clearContent(); RW.menu.draw(cx);
@@ -134,8 +146,8 @@ RW.engine = (function () {
     cx.fillRect(0, 0, content.width, content.height);
   }
 
-  /* 统一面板：标题条 + 四角角标 + 边框。全界面复用。 */
-  function panel(rect, title, opt) {
+  /* 统一面板：像素英文标题 + 中文说明 + 四角角标 */
+  function panel(rect, en, cn, opt) {
     opt = opt || {};
     var u = RW.layout.get().u || 1;
     var hh = 20 * u;
@@ -143,7 +155,9 @@ RW.engine = (function () {
     cx.fillRect(rect.x, rect.y, rect.w, rect.h);
     cx.fillStyle = 'rgba(0,60,0,0.85)';
     cx.fillRect(rect.x, rect.y, rect.w, hh);
-    RW.fx.phosphorText(cx, title, rect.x + 7 * u, rect.y + hh * 0.72, 9.5 * u, { color: C.mid });
+    var psc = Math.max(2, Math.round(2 * u));
+    RW.pixel.draw(cx, en, rect.x + 7 * u, rect.y + (hh - RW.pixel.height(psc)) / 2, psc, C.hi);
+    if (cn) RW.fx.phosphorText(cx, cn, rect.x + rect.w - 7 * u, rect.y + hh * 0.72, 9 * u, { align: 'right', color: C.dim, glow: false });
     RW.fx.frame(cx, rect.x, rect.y, rect.w, rect.h, { color: opt.color || C.dark });
     cx.strokeStyle = opt.color || C.dark; cx.lineWidth = 1;
     cx.beginPath();
@@ -170,10 +184,12 @@ RW.engine = (function () {
     drawSidePanel(L, t);
     drawFooter(L);
     if (jammed) drawJamOverlay(L, t);
+    RW.trans.drawOverlay(cx, L.W, L.H, L.u);
+    RW.ui.drawFlashes(cx);
   }
 
   function drawMapPanel(L, t) {
-    var inner = panel(L.map, '地图显示  //  TACTICAL MAP');
+    var inner = panel(L.map, 'TACTICAL MAP', '地图显示');
     clipAndDraw(inner, function () {
       drawTerrainLayer(L); drawGridLayer(L); drawContourLayer(L);
       drawWaterLayer(L, t); drawHoverTile(L);
@@ -269,7 +285,6 @@ RW.engine = (function () {
     for (var x = 0; x < RW.terrain.W; x += 5) cx.fillText((x + 1), tl.originX + (x + 0.5) * tl.size, inner.y + 2 * u);
     cx.textAlign = 'left'; cx.textBaseline = 'middle';
     for (var y = 0; y < RW.terrain.H; y += 5) cx.fillText(String.fromCharCode(65 + (y % 26)), inner.x + 2 * u, tl.originY + (y + 0.5) * tl.size);
-
     var nx = inner.x + inner.w - 20 * u, ny = inner.y + 22 * u;
     cx.strokeStyle = C.mid; cx.lineWidth = 1;
     cx.beginPath(); cx.arc(nx, ny, 11 * u, 0, Math.PI * 2); cx.stroke();
@@ -277,7 +292,6 @@ RW.engine = (function () {
     cx.moveTo(nx, ny - 9 * u); cx.lineTo(nx - 3.5 * u, ny + 3 * u); cx.lineTo(nx, ny + 0.5 * u); cx.lineTo(nx + 3.5 * u, ny + 3 * u);
     cx.closePath(); cx.fillStyle = C.hi; cx.fill();
     RW.fx.phosphorText(cx, 'N', nx, ny - 14 * u, 8 * u, { align: 'center', color: C.mid2 });
-
     var sx = inner.x + 8 * u, sy = inner.y + inner.h - 9 * u;
     RW.fx.phosphorText(cx, '1:' + Math.round(tl.size * 8), sx, sy - 6 * u, 7.5 * u, { color: C.dim });
     cx.strokeStyle = C.mid2; cx.lineWidth = 1;
@@ -289,7 +303,7 @@ RW.engine = (function () {
   }
 
   function drawToolsPanel(L) {
-    var inner = panel(L.tools, '地图操作');
+    var inner = panel(L.tools, 'MAP TOOLS', '地图操作');
     var u = L.u, items = ['移动地图', '缩放', '网格', '标记'];
     var y = inner.y + 6 * u, rowH = (inner.h - 12 * u) / items.length;
     for (var i = 0; i < items.length; i++) {
@@ -300,7 +314,7 @@ RW.engine = (function () {
   }
 
   function drawOrdersPanel(L) {
-    var inner = panel(L.orders, '单位下令区');
+    var inner = panel(L.orders, 'ORDERS', '单位下令区');
     var u = L.u;
     if (!focusedUnit) {
       RW.fx.phosphorText(cx, '未选中单位', inner.x + inner.w / 2, inner.y + inner.h * 0.42, 9.5 * u, { align: 'center', color: C.dimmest });
@@ -317,12 +331,11 @@ RW.engine = (function () {
   }
 
   function drawSidePanel(L, t) {
-    var inner = panel(L.side, '详情展示  //  DETAIL');
+    var inner = panel(L.side, 'DETAIL', '详情展示');
     var u = L.u;
     var x = inner.x + 8 * u, w = inner.w - 16 * u, y = inner.y + 10 * u;
     RW.fx.frame(cx, x, y, w, 1, { color: C.dimmest });
     y += 10 * u;
-
     if (focusedUnit) {
       var un = RW.unit.TYPES[focusedUnit.type] || {};
       RW.fx.phosphorText(cx, focusedUnit.name, x, y, 12 * u, { color: C.hi, bold: true });
@@ -371,12 +384,12 @@ RW.engine = (function () {
     var f = L.footer, u = L.u;
     RW.fx.frame(cx, f.x, f.y, f.w, f.h, { color: C.dimmest });
     var ty = f.y + f.h * 0.68;
-    RW.fx.phosphorText(cx, 'REMOTE WARFARE  v' + RW.version, f.x + 8 * u, ty, 8 * u, { color: C.dim });
+    var psc = Math.max(1, Math.round(1.5 * u));
+    RW.pixel.draw(cx, 'REMOTE WARFARE  V' + RW.version, f.x + 8 * u, ty - RW.pixel.height(psc) + 3 * u, psc, C.dim);
     RW.fx.phosphorText(cx, 'LEVEL 01 · 教学    TURN 00', f.x + f.w * 0.5, ty, 8 * u, { align: 'center', color: C.mid });
     RW.fx.phosphorText(cx, '[ESC] 主菜单', f.x + f.w - 8 * u, ty, 8 * u, { align: 'right', color: C.dim });
   }
 
-  /* 信号干扰覆盖层：锁定操作时的表演效果 */
   function drawJamOverlay(L, t) {
     var u = L.u;
     cx.fillStyle = 'rgba(0,0,0,0.55)';
@@ -390,13 +403,13 @@ RW.engine = (function () {
     var bw = Math.min(L.W * 0.56, 460 * u), bh = 92 * u;
     var bx = (L.W - bw) / 2, by = (L.H - bh) / 2;
     RW.fx.frame(cx, bx, by, bw, bh, { color: C.hi, width: 2, fill: 'rgba(0,20,0,0.9)' });
-    RW.fx.phosphorText(cx, 'SIGNAL LOST', L.W / 2, by + 30 * u, 22 * u, { align: 'center', color: C.hi, bold: true });
-    RW.fx.phosphorText(cx, '战场信号被屏蔽', L.W / 2, by + 52 * u, 11 * u, { align: 'center', color: C.mid2 });
-    if (Math.floor(t * 2) % 2 === 0) RW.fx.phosphorText(cx, '正在重新建立链路 . . .', L.W / 2, by + 74 * u, 10 * u, { align: 'center', color: C.mid });
+    RW.pixel.drawCentered(cx, 'SIGNAL LOST', L.W / 2, by + 18 * u, Math.max(2, Math.round(3 * u)), C.hi);
+    RW.fx.phosphorText(cx, '战场信号被屏蔽', L.W / 2, by + 58 * u, 11 * u, { align: 'center', color: C.mid2 });
+    if (Math.floor(t * 2) % 2 === 0) RW.fx.phosphorText(cx, '正在重新建立链路 . . .', L.W / 2, by + 78 * u, 10 * u, { align: 'center', color: C.mid });
   }
 
   return {
-    init: init, start: start, goto: goto, showModal: showModal,
+    init: init, start: start, goto: goto, requestScreen: requestScreen, showModal: showModal,
     screen: function () { return screen; },
     setJam: function (on) { jammed = !!on; RW.fx.jam(jammed ? 0.85 : 0); },
     isJammed: function () { return jammed; }
