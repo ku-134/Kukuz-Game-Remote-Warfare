@@ -7,8 +7,27 @@
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <!-- 竖屏提示 -->
-  <div id="rotate-tip" class="rotate-tip">请横屏体验</div>
+  <!-- 竖屏提示：伪装成终端告警 -->
+  <div id="rotate-tip" class="rotate-tip">
+    <div class="rt-corner tl"></div>
+    <div class="rt-corner tr"></div>
+    <div class="rt-corner bl"></div>
+    <div class="rt-corner br"></div>
+
+    <div class="rt-head">
+      <span>PHOSPHOR SYSTEMS PHC-1983</span>
+      <span id="rt-clock">--:--:--</span>
+    </div>
+
+    <div class="rt-title">ORIENTATION FAULT</div>
+    <div class="rt-phone"></div>
+    <div class="rt-sub">请旋转设备以继续</div>
+    <div class="rt-cn">本终端仅支持横向显示</div>
+
+    <div class="rt-log">
+      <span>WARN 显示姿态越界 · 战术面板无法排布 · 请横屏解锁指挥界面 · 剩余链路稳定 · 等待操作员响应 ...</span>
+    </div>
+  </div>
 
   <!-- 游戏画布（含磷光屏后处理） -->
   <canvas id="stage"></canvas>
@@ -21,6 +40,7 @@
   <script src="js/core/fx.js"></script>
   <script src="js/core/input.js"></script>
   <script src="js/core/load.js"></script>
+  <script src="js/core/layout.js"></script>
   <script src="js/systems/terrain.js"></script>
   <script src="js/systems/unit.js"></script>
   <script src="js/ui/ui.js"></script>
