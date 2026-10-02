@@ -1,13 +1,13 @@
 /* core/fx.js —— 磷光屏美术引擎
    零美术资源：所有视觉程序生成。
-   提供：曲面 CRT 畸变 / 扫描线 / 光晕 / 信号故障 / 噪点 / 暗角 / 闪烁 / 色散 / 余晖 / 开机动画。
-   完整实现见本地源码。 */
+   提供：曲面 CRT 畸变 / 扫描线 / 光晕 / 噪点 / 暗角 / 闪烁 / 色散 / 余晖 / 开机动画。
+   信号干扰（原自动故障）改为按需表演效果，见 jam()。完整实现见本地源码。 */
 RW.fx = (function () {
   'use strict';
 
   var canvas, ctx, buf, bctx;
   var W = 0, H = 0, dpr = 1;
-  var glitch = 0, glitchTimer = 1.2, flicker = 0, rollY = 0;
+  var glitch = 0, flicker = 0, rollY = 0, jamLevel = 0;
   var persA, persCtx, noiseTile, noiseCtx;
   var PHOSPHOR = [51, 255, 51];
 
@@ -41,22 +41,16 @@ RW.fx = (function () {
 
   function size() { return { W: W, H: H, dpr: dpr }; }
 
+  /* 信号干扰：不再自动随机触发，改为按需表演效果。 */
   function updateGlitch(dt) {
-    var eff = RW.settings.get('intensity');
-    glitchTimer -= dt * (0.55 + eff * 1.6);
-    if (glitchTimer <= 0) {
-      glitch = (0.45 + Math.random() * 1.15) * eff;
-      glitchTimer = 1.8 + Math.random() * 4.5;
-    }
-    glitch *= Math.pow(0.015, dt);
-    if (glitch < 0.002) glitch = 0;
+    glitch += (jamLevel - glitch) * Math.min(1, dt * 8);
     flicker += dt;
     rollY += dt * 0.09;
   }
 
+  function jam(level) { jamLevel = RW.utils.clamp(level || 0, 0, 1); }
   function burst(v) { glitch = Math.max(glitch, v || 0.9); }
 
-  /* 磷光余晖：单缓冲衰减 + 叠加新帧 */
   function compose(source) {
     var trail = RW.settings.get('trail');
     if (trail === undefined) trail = 0.4;
@@ -83,11 +77,10 @@ RW.fx = (function () {
     bctx.fillStyle = '#000';
     bctx.fillRect(0, 0, W, H);
 
-    /* 曲面：分带横向微缩放，模拟 CRT 玻璃鼓形 */
+    /* 曲面：分带横向微缩放 */
     var bands = 26, bh = Math.ceil(H / bands);
     for (var b = 0; b < bands; b++) {
-      var sy = b * bh;
-      var v = (b + 0.5) / bands - 0.5;
+      var sy = b * bh, v = (b + 0.5) / bands - 0.5;
       var bulge = 1 + 0.055 * (1 - 4 * v * v);
       var dw = W * bulge, dx = (W - dw) / 2;
       bctx.drawImage(layer, 0, sy, W, bh, dx, sy, dw, bh);
@@ -113,18 +106,31 @@ RW.fx = (function () {
       bctx.globalAlpha = 0.16 * glow * eff;
       bctx.drawImage(layer, -dpr, -dpr, W, H);
       bctx.drawImage(layer, dpr, dpr, W, H);
+      bctx.globalAlpha = 0.10 * glow * eff;
+      bctx.drawImage(layer, -3 * dpr, 0, W, H);
     }
 
+    /* 信号干扰：横向撕裂 + 竖向偏移 + 干扰暗场 */
     if (glitch > 0.01) {
       bctx.globalCompositeOperation = 'source-over';
       bctx.globalAlpha = 1;
-      var slices = 4 + Math.floor(glitch * 7);
+      var slices = 6 + Math.floor(glitch * 12);
       for (var k = 0; k < slices; k++) {
         var gy = Math.random() * H;
-        var gh = Math.max(2, Math.random() * 30 * dpr);
-        var gx = (Math.random() - 0.5) * 52 * glitch * dpr;
+        var gh = Math.max(2, Math.random() * 40 * dpr);
+        var gx = (Math.random() - 0.5) * 70 * glitch * dpr;
         bctx.drawImage(layer, 0, gy * (layer.height / H), layer.width, gh * (layer.height / H), gx, gy, W, gh);
       }
+      var vbars = Math.floor(glitch * 4);
+      for (var vb = 0; vb < vbars; vb++) {
+        var vx = Math.random() * W, vw = Math.max(2, Math.random() * 16 * dpr);
+        var vy = (Math.random() - 0.5) * 30 * glitch * dpr;
+        bctx.drawImage(layer, vx * (layer.width / W), 0, vw * (layer.width / W), layer.height, vx, vy, vw, H);
+      }
+      bctx.globalAlpha = 0.30 * glitch;
+      bctx.fillStyle = '#000';
+      bctx.fillRect(0, 0, W, H);
+      bctx.globalAlpha = 1;
     }
 
     ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -136,9 +142,9 @@ RW.fx = (function () {
     ctx.drawImage(buf, 0, 0);
     ctx.globalAlpha = 1;
 
-    if (eff > 0.02) {
+    if (eff > 0.02 || glitch > 0.05) {
       ctx.globalCompositeOperation = 'screen';
-      ctx.globalAlpha = 0.12 * eff;
+      ctx.globalAlpha = 0.12 * eff + 0.30 * glitch;
       var pat = ctx.createPattern(noiseTile, 'repeat');
       ctx.save();
       ctx.translate(-(Math.random() * 128 | 0), -(Math.random() * 128 | 0));
@@ -236,7 +242,7 @@ RW.fx = (function () {
 
   return {
     init: init, resize: resize, size: size,
-    update: updateGlitch, present: present, burst: burst,
+    update: updateGlitch, present: present, burst: burst, jam: jam,
     phosphorText: phosphorText, frame: frame, invert: invert, sweep: sweep, crtPowerOn: crtPowerOn,
     PHOSPHOR: PHOSPHOR
   };
