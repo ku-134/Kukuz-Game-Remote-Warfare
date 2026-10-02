@@ -1,5 +1,4 @@
-/* core/load.js —— 资源与模块装载登记
-   本项目零外部资源，装载即校验模块可用性（并预留真实资源位）。 */
+/* core/load.js —— 资源与模块装载登记 */
 RW.load = (function () {
   'use strict';
 
@@ -8,6 +7,7 @@ RW.load = (function () {
     { key: 'settings', name: 'CORE.SETTINGS' },
     { key: 'fx',       name: 'CORE.FX.DISPLAY' },
     { key: 'input',    name: 'CORE.INPUT' },
+    { key: 'layout',   name: 'CORE.LAYOUT' },
     { key: 'terrain',  name: 'SYS.TERRAIN' },
     { key: 'unit',     name: 'SYS.UNIT' },
     { key: 'ui',       name: 'UI.FRAMEWORK' },
