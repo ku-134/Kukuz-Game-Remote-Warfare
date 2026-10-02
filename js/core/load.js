@@ -5,6 +5,8 @@ RW.load = (function () {
   var list = [
     { key: 'utils',    name: 'CORE.UTILS' },
     { key: 'settings', name: 'CORE.SETTINGS' },
+    { key: 'pixel',    name: 'CORE.PIXEL.FONT' },
+    { key: 'trans',    name: 'CORE.TRANSITION' },
     { key: 'fx',       name: 'CORE.FX.DISPLAY' },
     { key: 'input',    name: 'CORE.INPUT' },
     { key: 'layout',   name: 'CORE.LAYOUT' },
