@@ -2,7 +2,7 @@
 (function () {
   'use strict';
 
-  RW.version = '0.3.0';
+  RW.version = '0.4.0';  /* 与 VERSION 保持一致 */
 
   /* 横屏检测 */
   function updateOrientation() {
@@ -15,11 +15,13 @@
   /* 横屏提示页的实时时钟 */
   var clock = document.getElementById('rt-clock');
   if (clock) {
-    setInterval(function () {
+    var tick = function () {
       var d = new Date();
       var p = function (n) { return n < 10 ? '0' + n : '' + n; };
       clock.textContent = p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds());
-    }, 1000);
+    };
+    tick();
+    setInterval(tick, 1000);
   }
 
   RW.engine.init();
