@@ -2,9 +2,8 @@
 (function () {
   'use strict';
 
-  RW.version = '0.4.0';  /* 与 VERSION 保持一致 */
+  RW.version = '0.5.0';
 
-  /* 横屏检测 */
   function updateOrientation() {
     document.body.classList.toggle('portrait', window.innerHeight > window.innerWidth);
   }
@@ -12,7 +11,6 @@
   window.addEventListener('orientationchange', updateOrientation);
   updateOrientation();
 
-  /* 横屏提示页的实时时钟 */
   var clock = document.getElementById('rt-clock');
   if (clock) {
     var tick = function () {
