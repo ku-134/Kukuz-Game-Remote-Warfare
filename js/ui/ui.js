@@ -1,6 +1,4 @@
-/* ui/ui.js —— UI 框架
-   1) DOM 层：弹窗等显示层
-   2) Canvas 层：点击闪烁（交互反馈） */
+/* ui/ui.js —— UI 框架：DOM 层 + 点击闪烁（绑定界面，不跨屏残留） */
 RW.ui = (function () {
   'use strict';
 
@@ -46,12 +44,17 @@ RW.ui = (function () {
   function show(node) { root.appendChild(node); return node; }
   function clear() { root.innerHTML = ''; }
 
-  /* ---------- 点击闪烁：被点击元素先闪三下 */
-  var FLASH_DUR = 0.34;
+  var FLASH_DUR = 0.30;
 
   function flash(x, y, w, h) {
-    flashes.push({ x: x, y: y, w: w, h: h, t: FLASH_DUR });
+    flashes.push({
+      x: x, y: y, w: w, h: h,
+      t: FLASH_DUR,
+      screen: RW.engine ? RW.engine.screen() : null
+    });
   }
+
+  function hasFlashes() { return flashes.length > 0; }
 
   function updateFlashes(dt) {
     for (var i = flashes.length - 1; i >= 0; i--) {
@@ -61,16 +64,20 @@ RW.ui = (function () {
   }
 
   function drawFlashes(c) {
+    var cur = RW.engine ? RW.engine.screen() : null;
     for (var i = 0; i < flashes.length; i++) {
       var f = flashes[i];
+      if (f.screen && cur && f.screen !== cur) continue;
       var p = 1 - f.t / FLASH_DUR;
       var on = Math.floor(p * 3) % 2 === 0;
       if (on) RW.fx.invert(c, f.x, f.y, f.w, f.h);
-      c.globalAlpha = (1 - p) * 0.9;
+      c.globalAlpha = (1 - p) * 0.85;
       c.strokeStyle = '#33ff33';
       c.lineWidth = 2;
       c.strokeRect(Math.round(f.x) - 1, Math.round(f.y) - 1, Math.round(f.w) + 2, Math.round(f.h) + 2);
       c.globalAlpha = 1;
+      c.globalCompositeOperation = 'source-over';
+      c.lineWidth = 1;
     }
   }
 
@@ -79,6 +86,7 @@ RW.ui = (function () {
   return {
     init: init, el: el, button: button, modal: modal, hud: hud,
     show: show, clear: clear,
-    flash: flash, updateFlashes: updateFlashes, drawFlashes: drawFlashes, clearFlashes: clearFlashes
+    flash: flash, hasFlashes: hasFlashes,
+    updateFlashes: updateFlashes, drawFlashes: drawFlashes, clearFlashes: clearFlashes
   };
 })();
