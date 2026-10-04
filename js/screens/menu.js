@@ -1,7 +1,6 @@
-/* screens/menu.js —— 开始界面与设置
-   层级：主菜单 -> 设置 -> 显示设置（子界面）
-   像素字体为主；文字按 RW.trans.reveal() 逐步写出；点击有闪烁反馈。
-   完整实现见本地源码。 */
+/* screens/menu.js —— 开始界面与设置（完整实现见本地源码）
+   层级：主菜单 -> 设置 -> 显示设置
+   像素字体 + 揭示过渡 + 点击闪烁；「开始作战」进入关卡简报。 */
 RW.menu = (function () {
   'use strict';
 
@@ -149,7 +148,7 @@ RW.menu = (function () {
 
   function chooseMain() {
     var id = MAIN[index].id;
-    if (id === 'start') RW.engine.requestScreen('play');
+    if (id === 'start') RW.engine.requestScreen('brief');
     else if (id === 'settings') { mode = 'settings'; index = 0; }
     else showAbout();
   }
